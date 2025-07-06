@@ -98,6 +98,10 @@ app.ico
 # icon_source Files
 icon_source/
 
+# Ignore test file locations
+TestBackups/
+TestSaves/
+
 # User configuration file (should not be in version control)
 config.json
 
