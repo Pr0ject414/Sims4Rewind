@@ -28,6 +28,8 @@ It's designed to be a "set it and forget it" tool that runs quietly in the syste
 - **Backup Location:** Click "Browse..." and choose an empty folder where you want to store your backups. It is highly recommended to use a folder on a separate physical drive if possible.
 - **Start Monitoring:** Once configured, click the "Start Monitoring" button. The application will now run in the background. You can close the main window; it will minimize to the system tray.
 
+> **Important:** If you enable "Start with Windows", do not move the application folder afterwards. If you need to move it, please disable the startup option first, move the folder, and then re-enable it to update the shortcut.
+
 > **Note on Antivirus/Windows SmartScreen:**
 > Because this is an unofficial application, Windows may show a security warning ("Windows protected your PC"). This is a standard precaution.
 >
