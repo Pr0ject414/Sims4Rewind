@@ -4,21 +4,18 @@ This document outlines potential new features and significant upgrades for the S
 
 ---
 
-## 1. Desktop Notifications for Key Events
+## 1. Desktop Notifications for Key Events (Implemented)
 
 **This is the most impactful and practical next feature to enhance the user experience.**
 
-* **Description:** The application would show brief, non-intrusive desktop notifications for important events, allowing the user to have peace of mind that the application is working without needing to open the main window.
-* **Events to Notify:**
-    * Backup successfully created (e.g., "Backup of *Slot_00000001.save* created.").
-    * Monitoring has stopped due to an error (e.g., "Error: Saves folder is no longer accessible.").
-    * Initial backup scan is complete.
-* **Benefit:** Provides immediate, "set it and forget it" confidence. Users are instantly aware of successful backups and, more importantly, are alerted if the tool stops working for any reason.
-* **Implementation Plan:**
-    1.  This feature can be added with minimal changes to the existing structure. The `QSystemTrayIcon` class is the ideal place to manage notifications.
-    2.  A new `show_notification(title, message)` method would be added to the `SystemTrayIcon` class.
-    3.  New signals, like `notification_requested = pyqtSignal(str, str)`, would be added to the `Sims4RewindApp` main window.
-    4.  The `BackupHandler` would emit this new signal upon success or error, which would then be connected to the system tray's notification method.
+*   **Description:** The application now shows brief, non-intrusive desktop notifications for important events, allowing the user to have peace of mind that the application is working without needing to open the main window.
+*   **Events Notified:**
+    *   Backup successfully created.
+    *   Monitoring started/stopped.
+    *   Initial backup scan complete.
+    *   Errors during file operations (e.g., failed to read file, backup error).
+*   **Benefit:** Provides immediate, "set it and forget it" confidence. Users are instantly aware of successful backups and, more importantly, are alerted if the tool stops working for any reason.
+*   **Implementation Details:** This feature was added by extending the `SystemTrayIcon` class, adding new notification signals to `BackupService` and `BackupHandler`, and connecting these signals to the system tray's notification method.
 
 ---
 

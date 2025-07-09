@@ -51,6 +51,7 @@ class Sims4RewindApp(QMainWindow):
         self.ui.browse_saves_button.clicked.connect(self._browse_saves_folder)
         self.ui.browse_backups_button.clicked.connect(self._browse_backup_folder)
         self.ui.restore_button.clicked.connect(self._restore_backup)
+        self.ui.restore_to_button.clicked.connect(self._restore_backup_to_location)
         self.ui.toggle_monitoring_button.toggled.connect(self._toggle_monitoring)
         self.ui.startup_checkbox.toggled.connect(self.startup.set_startup)
         self.ui.backup_filter_dropdown.currentIndexChanged.connect(self._update_backup_list_display)
@@ -194,6 +195,44 @@ class Sims4RewindApp(QMainWindow):
         except Exception as e:
             dialogs.show_critical(self, "Restore Failed", f"An unexpected error occurred: {e}")
             self._update_status_label("Restore failed. See error popup.")
+
+    def _restore_backup_to_location(self):
+        """Handles restoring a selected backup to a user-specified location."""
+        selected_item = self.ui.backup_list_widget.currentItem()
+        if not selected_item:
+            dialogs.show_warning(self, "Restore Error", "Please select a backup file from the list first.")
+            return
+
+        backup_filename = selected_item.text()
+        original_savename = get_original_from_backup(backup_filename)
+        if not original_savename:
+            dialogs.show_critical(self, "Restore Error", f"Could not parse original save name from '{backup_filename}'.")
+            return
+
+        # Suggest a default filename based on the original save name
+        default_filename = original_savename
+        
+        # Open file dialog to get destination path and filename
+        # We need to import QFileDialog for this
+        from PyQt6.QtWidgets import QFileDialog
+        destination_path, _ = QFileDialog.getSaveFileName(
+            self, "Save Backup As", default_filename, "All Files (*)"
+        )
+
+        if not destination_path:
+            self._update_status_label("Restore to location cancelled.")
+            return
+
+        try:
+            backup_folder = self.ui.backup_folder_path.text()
+            backup_source_path = os.path.join(backup_folder, backup_filename)
+            
+            shutil.copy2(backup_source_path, destination_path)
+            dialogs.show_info(self, "Success", f"Successfully restored '{backup_filename}' to '{destination_path}'.")
+            self._update_status_label(f"Successfully restored {backup_filename} to {destination_path}.")
+        except Exception as e:
+            dialogs.show_critical(self, "Restore Failed", f"An unexpected error occurred during restore:\n\n{e}")
+            self._update_status_label("Restore to location failed. See error popup.")
 
     def closeEvent(self, event):
         """Handles the user trying to close the window."""

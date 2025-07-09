@@ -5,6 +5,7 @@ These tests use mock objects to isolate the UI from the backend services.
 
 import sys
 import os
+import os
 import pytest
 from PyQt6.QtCore import pyqtSignal, QObject
 from unittest.mock import MagicMock, patch
@@ -96,3 +97,50 @@ def test_ui_updates_on_service_signal(app, qtbot):
     main_app._on_monitoring_status_changed(False)
     qtbot.wait(10) # Allow event loop to process UI updates
     assert "Start Monitoring" in main_app.ui.toggle_monitoring_button.text()
+
+def test_restore_to_location(app, mocker):
+    """Tests that restoring to a new location works correctly."""
+    main_app, _, _, _, _ = app
+
+    # Simulate selecting a backup item
+    main_app.ui.backup_list_widget.addItem("Slot_00000001.save_2023-01-01_12-00-00.bak")
+    main_app.ui.backup_list_widget.setCurrentRow(0)
+
+    # Mock QFileDialog.getSaveFileName
+    mock_get_save_file_name = mocker.patch('PyQt6.QtWidgets.QFileDialog.getSaveFileName', return_value=("D:/new/location/my_save.save", ""))
+
+    # Mock shutil.copy2
+    mock_copy2 = mocker.patch('shutil.copy2')
+
+    # Mock dialogs.show_info
+    mock_show_info = mocker.patch('ui.main_window.dialogs.show_info')
+
+    # Set dummy backup folder path for the test
+    main_app.ui.backup_folder_path.setText("D:/test/backups")
+
+    # Act
+    main_app._restore_backup_to_location()
+
+    # Assertions
+    mock_get_save_file_name.assert_called_once_with(
+        main_app, "Save Backup As", "Slot_00000001.save", "All Files (*)"
+    )
+    mock_copy2.assert_called_once_with(
+        os.path.join("D:/test/backups", "Slot_00000001.save_2023-01-01_12-00-00.bak"),
+        "D:/new/location/my_save.save"
+    )
+    mock_show_info.assert_called_once()
+    assert "Successfully restored" in main_app.ui.status_label.text()
+
+
+def test_restore_to_location_no_selection(app, mocker):
+    """Tests that restore to location shows a warning if no backup is selected."""
+    main_app, _, _, _, _ = app
+    mock_show_warning = mocker.patch('ui.main_window.dialogs.show_warning')
+
+    # Act
+    main_app._restore_backup_to_location()
+
+    # Assert
+    mock_show_warning.assert_called_once()
+    assert "Please select a backup file" in mock_show_warning.call_args[0][2]

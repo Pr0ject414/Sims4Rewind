@@ -91,9 +91,18 @@ class Ui_Sims4RewindApp(object):
         # --- CHANGE END ---
 
         self.backup_list_widget = QListWidget()
+        
+        # Restore Buttons Layout
+        restore_buttons_layout = QHBoxLayout()
+        self.restore_to_button = QPushButton("Restore to...")
+        self.restore_to_button.setStyleSheet("background-color: #FFC107; color: black; border-radius: 5px; padding: 5px;") # Yellowish color
+        restore_buttons_layout.addWidget(self.restore_to_button)
+
         self.restore_button = QPushButton("Restore Selected Backup")
         self.restore_button.setStyleSheet("background-color: #008CBA; color: white; border-radius: 5px; padding: 5px;")
+        restore_buttons_layout.addWidget(self.restore_button)
+
         backups_layout.addWidget(self.backup_list_widget)
-        backups_layout.addWidget(self.restore_button)
+        backups_layout.addLayout(restore_buttons_layout)
         self.backups_group.setLayout(backups_layout)
         self.main_layout.addWidget(self.backups_group)
