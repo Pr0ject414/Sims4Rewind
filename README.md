@@ -11,7 +11,12 @@ It's designed to be a "set it and forget it" tool that runs quietly in the syste
 - **Automatic Backups:** Runs in the background and automatically backs up any changed `.save` file.
 - **Efficient Hashing:** Compares file content hashes to prevent creating duplicate, unnecessary backups of unchanged files.
 - **Configurable History:** Set how many backups you want to keep per save file. The oldest ones are automatically pruned.
-- **Easy Restore:** Restore any backup with a single click from a clear, time-sorted list.
+- **Enhanced Restore Options:**
+    - **Easy Restore:** Restore any backup with a single click from a clear, time-sorted list.
+    - **"Restore to..." Functionality:** Restore a backup to a custom location, allowing for safe inspection or testing without overwriting your live save.
+- **Backup Compression (.zip):** Option to save backups as `.zip` files, significantly reducing disk space usage.
+- **Detailed Activity Log:** A dedicated tab in the main window provides a timestamped history of all application actions and errors, aiding in troubleshooting.
+- **Desktop Notifications:** Receive non-intrusive desktop notifications for key events like backup creation, monitoring status changes, and errors.
 - **Filterable View:** Easily filter the backup list to show backups for a specific save slot.
 - **System Tray Integration:** Hides neatly in the system tray. The main window can be opened anytime from the tray icon.
 - **Run on Startup:** Can be configured to launch automatically when you log in to Windows.
