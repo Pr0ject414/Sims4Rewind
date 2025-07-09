@@ -144,3 +144,18 @@ def test_restore_to_location_no_selection(app, mocker):
     # Assert
     mock_show_warning.assert_called_once()
     assert "Please select a backup file" in mock_show_warning.call_args[0][2]
+
+def test_log_tab_updates(app, qtbot):
+    """Tests that messages are appended to the log tab with a timestamp."""
+    main_app, _, _, _, _ = app
+
+    test_message = "This is a test log message."
+    main_app._update_status_label(test_message)
+    qtbot.wait(10) # Allow event loop to process UI updates
+
+    log_content = main_app.ui.log_text_edit.toPlainText()
+    assert test_message in log_content
+    # Check for timestamp format (e.g., [YYYY-MM-DD HH:MM:SS])
+    assert log_content.startswith('[') and log_content.endswith(f'] {test_message}')
+    assert len(log_content.split(' ')[0]) == 11 # [YYYY-MM-DD
+    assert len(log_content.split(' ')[1]) == 9 # HH:MM:SS]

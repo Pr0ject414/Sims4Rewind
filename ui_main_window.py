@@ -6,7 +6,7 @@
 
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
-    QLineEdit, QListWidget, QSpinBox, QCheckBox, QGroupBox, QComboBox
+    QLineEdit, QListWidget, QSpinBox, QCheckBox, QGroupBox, QComboBox, QTabWidget, QTextEdit
 )
 
 class Ui_Sims4RewindApp(object):
@@ -77,7 +77,13 @@ class Ui_Sims4RewindApp(object):
         status_layout.addWidget(self.toggle_monitoring_button)
         self.main_layout.addLayout(status_layout)
 
-        # --- Backup List and Restore ---
+        # --- Tab Widget for Backups and Log ---
+        self.main_tabs = QTabWidget()
+
+        # --- Backups Tab ---
+        self.backups_tab = QWidget()
+        self.backups_tab_layout = QVBoxLayout(self.backups_tab)
+        
         self.backups_group = QGroupBox("Available Backups")
         backups_layout = QVBoxLayout()
 
@@ -105,4 +111,15 @@ class Ui_Sims4RewindApp(object):
         backups_layout.addWidget(self.backup_list_widget)
         backups_layout.addLayout(restore_buttons_layout)
         self.backups_group.setLayout(backups_layout)
-        self.main_layout.addWidget(self.backups_group)
+        self.backups_tab_layout.addWidget(self.backups_group)
+        self.main_tabs.addTab(self.backups_tab, "Backups")
+
+        # --- Log Tab ---
+        self.log_tab = QWidget()
+        self.log_tab_layout = QVBoxLayout(self.log_tab)
+        self.log_text_edit = QTextEdit()
+        self.log_text_edit.setReadOnly(True)
+        self.log_tab_layout.addWidget(self.log_text_edit)
+        self.main_tabs.addTab(self.log_tab, "Log")
+
+        self.main_layout.addWidget(self.main_tabs)

@@ -3,7 +3,7 @@ import os
 import shutil
 from datetime import datetime
 
-from PyQt6.QtCore import QMetaObject, Qt
+from PyQt6.QtCore import QMetaObject, Qt, pyqtSignal
 from PyQt6.QtGui import QIcon, QPixmap
 from PyQt6.QtWidgets import QMainWindow
 
@@ -18,6 +18,7 @@ class Sims4RewindApp(QMainWindow):
     Its sole responsibility is to display data from the ViewModel and delegate
     user actions to the appropriate services.
     """
+    log_message_requested = pyqtSignal(str) # New signal for logging
     def __init__(self, config_manager, backup_service, backup_view_model, startup_manager):
         super().__init__()
 
@@ -44,7 +45,7 @@ class Sims4RewindApp(QMainWindow):
             pixmap.loadFromData(base64.b64decode(ICON_DATA_REWIND))
             self.setWindowIcon(QIcon(pixmap))
         except Exception as e:
-            print(f"Could not load window icon: {e}")
+            self._update_status_label(f"Error loading icon: {e}")
 
     def _connect_ui_signals(self):
         """Connects widget signals to methods in this class."""
@@ -64,6 +65,7 @@ class Sims4RewindApp(QMainWindow):
         self.service.backup_created.connect(self.view_model.on_backup_created)
         self.service.backup_pruned.connect(self.view_model.on_backup_pruned)
         self.view_model.model_updated.connect(self._on_view_model_updated)
+        self.log_message_requested.connect(self._append_log_message)
 
     def _load_initial_settings(self):
         """Loads settings and populates the UI fields."""
@@ -85,7 +87,7 @@ class Sims4RewindApp(QMainWindow):
             "auto_monitor_on_startup": self.ui.auto_monitor_checkbox.isChecked()
         }
         self.config.save_settings(settings)
-        print("Settings saved.")
+        self._update_status_label("Settings saved.")
 
     def _update_ui_element_states(self):
         """Enables or disables UI elements based on current state."""
@@ -109,6 +111,12 @@ class Sims4RewindApp(QMainWindow):
     def _update_status_label(self, message):
         """Updates the status bar with a new message."""
         self.ui.status_label.setText(f"Status: {message}")
+        self.log_message_requested.emit(message) # Also send to log
+
+    def _append_log_message(self, message):
+        """Appends a timestamped message to the log text edit."""
+        timestamp = datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")
+        self.ui.log_text_edit.append(f"{timestamp} {message}")
 
     def _populate_filter_dropdown(self):
         """Populates the filter dropdown from the view model."""

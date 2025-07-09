@@ -19,15 +19,11 @@ This document outlines potential new features and significant upgrades for the S
 
 ---
 
-## 2. "Restore to..." Functionality
+## 2. "Restore to..." Functionality (Implemented)
 
-* **Description:** Add a "Restore to..." button next to the existing "Restore" button. This would open a file dialog prompting the user to choose a folder and a new name for the restored save file.
-* **Benefit:** This provides a non-destructive way for users to inspect or test old backups. They can restore a save to their desktop, check it in-game, and decide if they want to overwrite their current live save, preventing accidental data loss.
-* **Implementation Plan:**
-    1.  Add a new `QPushButton` to `ui_main_window.py`.
-    2.  Create a new method, `_restore_backup_to...`, in `main_window.py`.
-    3.  This method would call `QFileDialog.getSaveFileName` to get the destination path from the user.
-    4.  The core logic would be a simple `shutil.copy2` from the selected backup file to the user's chosen destination.
+*   **Description:** A "Restore to..." button has been added next to the existing "Restore" button. This opens a file dialog, allowing the user to choose a custom folder and name for the restored save file.
+*   **Benefit:** Provides a non-destructive way for users to inspect or test old backups, preventing accidental data loss by allowing them to restore a save to a temporary location before overwriting their current live save.
+*   **Implementation Details:** This feature involved adding a new `QPushButton` to `ui_main_window.py`, connecting it to a new `_restore_backup_to_location` method in `ui/main_window.py`, and utilizing `QFileDialog.getSaveFileName` and `shutil.copy2` for the file operation.
 
 ---
 

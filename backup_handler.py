@@ -102,7 +102,7 @@ class BackupHandler(QObject):
         
         self.status_callback(f"Failed to read file {os.path.basename(file_path)} after {retries} attempts.")
         self.status_notification_callback("File Read Error", f"Failed to read {os.path.basename(file_path)} after {retries} attempts.")
-        print(f"Could not calculate hash for {os.path.basename(file_path)} after {retries} attempts. Final error: {last_exception}")
+        self.status_notification_callback("File Read Error", f"Failed to read {os.path.basename(file_path)} after {retries} attempts. Final error: {last_exception}")
         return None
 
     def _initialize_and_create_initial_backups(self):
@@ -144,7 +144,7 @@ class BackupHandler(QObject):
                     break
 
                 if filename not in self.last_backup_hashes:
-                    print(f"File '{filename}' has no backup. Creating initial one.")
+                    self.status_notification_callback("Initial Backup Info", f"File '{filename}' has no backup. Creating initial one.")
                     self.status_callback(f"Creating initial backup for {filename}...")
                     file_path = os.path.join(self.saves_folder, filename)
                     self.check_and_create_backup(file_path)
@@ -221,7 +221,7 @@ class BackupHandler(QObject):
                         self.backup_notification_callback("Backup Pruned", f"Old backup of {original_filename} pruned.")
                     except FileNotFoundError:
                         # This can happen if file was deleted externally. It's safe to ignore.
-                        print(f"Prune skipping: '{filename_to_delete}' was already deleted.")
+                        self.status_notification_callback("Prune Info", f"Prune skipping: '{filename_to_delete}' was already deleted.")
                         pass
 
         except Exception as e:
