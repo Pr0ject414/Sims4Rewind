@@ -196,18 +196,15 @@ class Sims4RewindApp(QMainWindow):
             backup_folder = self.ui.backup_folder_path.text()
             live_save_path = os.path.join(saves_folder, original_savename)
             backup_source_path = os.path.join(backup_folder, backup_filename)
+            is_compressed = backup_filename.endswith(".zip")
 
-            if os.path.exists(live_save_path):
-                timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-                safety_path = f"{live_save_path}.pre-restore-{timestamp}"
-                shutil.move(live_save_path, safety_path)
-            
-            if backup_filename.endswith(".zip"):
-                with zipfile.ZipFile(backup_source_path, 'r') as zf:
-                    # Extract the original save file from the zip to the live saves folder
-                    zf.extract(original_savename, saves_folder)
-            else:
-                shutil.copy2(backup_source_path, live_save_path)
+            self.service.restore_backup_file(
+                backup_source_path=backup_source_path,
+                destination_path=live_save_path,
+                original_savename=original_savename,
+                is_compressed=is_compressed,
+                is_live_restore=True
+            )
             dialogs.show_info(self, "Success", f"Successfully restored '{original_savename}'.")
             self._update_status_label(f"Successfully restored {original_savename}.")
         except Exception as e:
@@ -242,16 +239,15 @@ class Sims4RewindApp(QMainWindow):
         try:
             backup_folder = self.ui.backup_folder_path.text()
             backup_source_path = os.path.join(backup_folder, backup_filename)
-            
-            if backup_filename.endswith(".zip"):
-                with zipfile.ZipFile(backup_source_path, 'r') as zf:
-                    # Extract the original save file from the zip to the chosen destination
-                    # The destination_path includes the filename, so we extract to its dirname
-                    zf.extract(original_savename, os.path.dirname(destination_path))
-                    # Then rename the extracted file to the desired destination_path
-                    os.rename(os.path.join(os.path.dirname(destination_path), original_savename), destination_path)
-            else:
-                shutil.copy2(backup_source_path, destination_path)
+            is_compressed = backup_filename.endswith(".zip")
+
+            self.service.restore_backup_file(
+                backup_source_path=backup_source_path,
+                destination_path=destination_path,
+                original_savename=original_savename,
+                is_compressed=is_compressed,
+                is_live_restore=False
+            )
             dialogs.show_info(self, "Success", f"Successfully restored '{backup_filename}' to '{destination_path}'.")
             self._update_status_label(f"Successfully restored {backup_filename} to {destination_path}.")
         except Exception as e:

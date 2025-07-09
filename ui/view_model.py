@@ -33,7 +33,7 @@ class BackupViewModel(QObject):
             return
 
         try:
-            files = [f for f in os.listdir(backup_folder) if f.endswith('.bak')]
+            files = [f for f in os.listdir(backup_folder) if f.endswith(('.bak', '.zip'))]
             for filename in files:
                 original_name = get_original_from_backup(filename)
                 if original_name:

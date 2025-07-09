@@ -62,8 +62,8 @@ def test_restore_io_error_handling(mock_dialogs, app):
     # Mock the confirmation dialog to return 'Yes'
     mock_dialogs.ask_question.return_value = True
 
-    # Patch the 'shutil.copy2' function to raise an error when called
-    with patch('shutil.copy2', side_effect=IOError("Disk full")):
+    # Patch the BackupService.restore_backup_file to raise an error when called
+    with patch.object(main_app.service, 'restore_backup_file', side_effect=IOError("Disk full")):
         # Act: Trigger the restore operation
         main_app._restore_backup()
     

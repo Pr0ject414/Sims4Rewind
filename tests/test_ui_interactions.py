@@ -110,8 +110,8 @@ def test_restore_to_location(app, mocker):
     # Mock QFileDialog.getSaveFileName
     mock_get_save_file_name = mocker.patch('PyQt6.QtWidgets.QFileDialog.getSaveFileName', return_value=("D:/new/location/my_save.save", ""))
 
-    # Mock shutil.copy2
-    mock_copy2 = mocker.patch('shutil.copy2')
+    # Mock the service's restore_backup_file method
+    mock_restore_service = mocker.patch.object(main_app.service, 'restore_backup_file')
 
     # Mock dialogs.show_info
     mock_show_info = mocker.patch('ui.main_window.dialogs.show_info')
@@ -126,9 +126,12 @@ def test_restore_to_location(app, mocker):
     mock_get_save_file_name.assert_called_once_with(
         main_app, "Save Backup As", "Slot_00000001.save", "All Files (*)"
     )
-    mock_copy2.assert_called_once_with(
-        os.path.join("D:/test/backups", "Slot_00000001.save_2023-01-01_12-00-00.bak"),
-        "D:/new/location/my_save.save"
+    mock_restore_service.assert_called_once_with(
+        backup_source_path=os.path.join("D:/test/backups", "Slot_00000001.save_2023-01-01_12-00-00.bak"),
+        destination_path="D:/new/location/my_save.save",
+        original_savename="Slot_00000001.save",
+        is_compressed=False,
+        is_live_restore=False
     )
     mock_show_info.assert_called_once()
     assert "Successfully restored" in main_app.ui.status_label.text()

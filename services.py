@@ -3,6 +3,11 @@ This module defines the BackupService, which is responsible for managing the
 file monitoring background thread and handling the core backup logic.
 """
 
+import os
+import shutil
+import zipfile
+from datetime import datetime
+
 from PyQt6.QtCore import QObject, QThread, pyqtSignal
 from backup_handler import BackupHandler
 
@@ -89,3 +94,38 @@ class BackupService(QObject):
         if self.backup_thread and self.backup_thread.isRunning():
             self.stop_monitoring()
             self.start_monitoring()
+
+    def restore_backup_file(self, backup_source_path: str, destination_path: str, original_savename: str, is_compressed: bool, is_live_restore: bool = False) -> None:
+        """
+        Restores a backup file to the specified destination.
+        Handles both compressed (.zip) and uncompressed (.bak) backups.
+        If is_live_restore is True, it will rename the existing live save file as a safety precaution.
+        """
+        try:
+            if is_live_restore:
+                # Handle safety backup for live restore
+                if os.path.exists(destination_path):
+                    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+                    safety_path = f"{destination_path}.pre-restore-{timestamp}"
+                    shutil.move(destination_path, safety_path)
+                    self.status_notification_requested.emit("Restore Info", f"Renamed existing live save to {os.path.basename(safety_path)} as safety backup.")
+
+            if is_compressed:
+                with zipfile.ZipFile(backup_source_path, 'r') as zf:
+                    # Extract the original save file from the zip to the chosen destination
+                    # The destination_path includes the filename, so we extract to its dirname
+                    extract_to_dir = os.path.dirname(destination_path) if not is_live_restore else os.path.dirname(destination_path)
+                    zf.extract(original_savename, extract_to_dir)
+                    
+                    # If it's restore to location, rename the extracted file to the desired destination_path
+                    if not is_live_restore:
+                        extracted_file_path = os.path.join(extract_to_dir, original_savename)
+                        os.rename(extracted_file_path, destination_path)
+            else:
+                shutil.copy2(backup_source_path, destination_path)
+            
+            self.status_notification_requested.emit("Restore Success", f"Successfully restored {os.path.basename(backup_source_path)}.")
+
+        except Exception as e:
+            self.status_notification_requested.emit("Restore Error", f"An error occurred during restore: {e}")
+            raise # Re-raise the exception for the UI to handle
