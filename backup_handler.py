@@ -1,8 +1,8 @@
 # =====================================================================
 # FILE: backup_handler.py
 # =====================================================================
-# This file contains the core backup logic. It now performs an
-# initial backup of any save files that are missing one upon startup.
+# This file contains the core backup logic. The initial scan is now
+# throttled to reduce its impact on system resources.
 
 import os
 import shutil
@@ -57,18 +57,24 @@ class BackupHandler(QObject):
     def run(self):
         """The main worker method. This runs on the dedicated backup thread."""
         self._is_running = True
-        self._initialize_and_create_initial_backups() # CHANGED
-        event_handler = BackupEventHandler(self)
-        self.observer.schedule(event_handler, self.saves_folder, recursive=True)
-        self.observer.start()
-        self.status_callback(f"Monitoring '{self.saves_folder}'...")
+        self._initialize_and_create_initial_backups()
+        
+        # Only start the file watcher if the initial scan wasn't cancelled
+        if self._is_running:
+            event_handler = BackupEventHandler(self)
+            self.observer.schedule(event_handler, self.saves_folder, recursive=True)
+            self.observer.start()
+            self.status_callback(f"Monitoring '{self.saves_folder}'...")
 
         # The worker's event loop
         while self._is_running:
             time.sleep(1)
 
-        self.observer.stop()
-        self.observer.join()
+        # Ensure the observer is stopped if it was started
+        if self.observer.is_alive():
+            self.observer.stop()
+            self.observer.join()
+        
         self.status_callback("Monitoring stopped.")
 
     def stop(self):
@@ -96,14 +102,13 @@ class BackupHandler(QObject):
         print(f"Could not calculate hash for {os.path.basename(file_path)} after {retries} attempts. Final error: {last_exception}")
         return None
 
-    def _initialize_and_create_initial_backups(self): # RENAMED
+    def _initialize_and_create_initial_backups(self):
         """
-        Scans the backup folder on startup to get hashes of the latest backups,
-        then scans the saves folder to create an initial backup for any file that
-        does not have one yet.
+        Scans the backup folder on startup, then performs a throttled scan of the
+        saves folder to create an initial backup for any missing files.
         """
         if not os.path.isdir(self.backup_folder):
-            os.makedirs(self.backup_folder, exist_ok=True) # Create backup folder if it doesn't exist
+            os.makedirs(self.backup_folder, exist_ok=True)
 
         self.status_callback("Initializing... scanning existing backups.")
 
@@ -123,22 +128,30 @@ class BackupHandler(QObject):
             if latest_hash:
                 self.last_backup_hashes[original_name] = latest_hash
         
-        # --- NEW LOGIC START ---
-        # Now, scan the saves folder to create initial backups for any files that don't have one.
-        self.status_callback("Checking for any save files that need an initial backup...")
+        # Scan the saves folder to create initial backups for any files that don't have one.
+        self.status_callback("Checking for save files needing an initial backup...")
         if os.path.isdir(self.saves_folder):
-            for filename in os.listdir(self.saves_folder):
-                if filename.endswith('.save'):
-                    # Check if we already processed a backup for this file during hash initialization
-                    if filename not in self.last_backup_hashes:
-                        print(f"File '{filename}' has no backup. Creating initial one.")
-                        self.status_callback(f"Creating initial backup for {filename}...")
-                        file_path = os.path.join(self.saves_folder, filename)
-                        # This will handle the hashing, copying, and UI notification
-                        self.check_and_create_backup(file_path)
-        # --- NEW LOGIC END ---
+            # Get a list of files to process first to avoid iterating over a live directory handle
+            save_files_to_check = [f for f in os.listdir(self.saves_folder) if f.endswith('.save')]
+            
+            for filename in save_files_to_check:
+                # If the user clicks "Stop Monitoring" during this scan, abort.
+                if not self._is_running:
+                    self.status_callback("Initial scan cancelled.")
+                    break
 
-        self.status_callback("Initialization and initial backup check complete.")
+                if filename not in self.last_backup_hashes:
+                    print(f"File '{filename}' has no backup. Creating initial one.")
+                    self.status_callback(f"Creating initial backup for {filename}...")
+                    file_path = os.path.join(self.saves_folder, filename)
+                    self.check_and_create_backup(file_path)
+
+                    # --- THROTTLING ---
+                    # Yield control to reduce the sudden I/O impact on the system.
+                    time.sleep(0.2) # 200ms delay
+        
+        if self._is_running:
+            self.status_callback("Initialization and initial backup check complete.")
 
     def check_and_create_backup(self, file_path):
         """Checks file hash and creates a backup if content has changed."""
