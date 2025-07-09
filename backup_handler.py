@@ -33,7 +33,7 @@ class BackupEventHandler(FileSystemEventHandler):
 
         # Debounce to prevent processing multiple rapid-fire save events for the same file
         if current_time - last_time > self.debounce_interval:
-            print(f"Modification detected (processing): {event.src_path}")
+            self.backup_handler.log_message_callback(f"Modification detected (processing): {event.src_path}")
             self.last_processed[event.src_path] = current_time
             self.backup_handler.check_and_create_backup(event.src_path)
 
@@ -42,7 +42,7 @@ class BackupHandler(QObject):
     Manages the backup process in a separate thread.
     Communicates with the main UI thread via Qt signals passed as callbacks.
     """
-    def __init__(self, saves_folder, backup_folder, backup_count, status_callback, created_callback, pruned_callback, backup_notification_callback, status_notification_callback, compress_backups):
+    def __init__(self, saves_folder, backup_folder, backup_count, status_callback, created_callback, pruned_callback, backup_notification_callback, status_notification_callback, compress_backups, log_message_callback):
         super().__init__()
         self.saves_folder = saves_folder
         self.backup_folder = backup_folder
@@ -57,6 +57,7 @@ class BackupHandler(QObject):
         self.backup_notification_callback = backup_notification_callback
         self.status_notification_callback = status_notification_callback
         self.compress_backups = compress_backups
+        self.log_message_callback = log_message_callback
 
     def run(self):
         """The main worker method. This runs on the dedicated backup thread."""

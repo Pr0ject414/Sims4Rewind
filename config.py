@@ -10,9 +10,10 @@ from PyQt6.QtWidgets import QMessageBox
 
 class ConfigManager:
     """Handles loading and saving of application settings from a JSON file."""
-    def __init__(self, config_file="config.json"):
+    def __init__(self, config_file="config.json", log_message_callback=None):
         """Initializes the ConfigManager with a path to the config file."""
         self.config_file = config_file
+        self.log_message_callback = log_message_callback
         self._default_settings = {
             "saves_folder": "",
             "backup_folder": "",
@@ -33,13 +34,15 @@ class ConfigManager:
                     loaded_settings = json.load(f)
                     # Merge loaded settings with defaults to ensure all keys exist
                     settings.update(loaded_settings)
-                print("Settings loaded successfully.")
+                if self.log_message_callback:
+                    self.log_message_callback("Settings loaded successfully.")
                 return settings
             except (json.JSONDecodeError, IOError) as e:
                 QMessageBox.warning(None, "Config Error", f"Could not load settings file: {e}. It may be corrupt.")
                 return settings # Return defaults on error
         else:
-            print("No config file found. Using default settings.")
+            if self.log_message_callback:
+                self.log_message_callback("No config file found. Using default settings.")
             return settings # Return defaults if no file
 
     def save_settings(self, settings):

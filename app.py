@@ -20,10 +20,20 @@ def main():
     app = QApplication(sys.argv)
 
     # --- Dependency Creation ---
-    # Create all the necessary components of our application.
-    config_manager = ConfigManager()
-    startup_manager = StartupManager()
+    # Create components that don't depend on others first
     backup_view_model = BackupViewModel()
+    startup_manager = StartupManager()
+
+    # Create the main window, passing initial dependencies
+    window = Sims4RewindApp(
+        config_manager=None, # Will be set later
+        backup_service=None, # Will be set later
+        backup_view_model=backup_view_model,
+        startup_manager=startup_manager
+    )
+
+    # Now create components that depend on the window's signals or other components
+    config_manager = ConfigManager(log_message_callback=window.log_message_requested.emit)
     
     # Load settings to initialize the service
     settings = config_manager.load_settings()
@@ -31,17 +41,12 @@ def main():
         saves_folder=settings.get("saves_folder"),
         backup_folder=settings.get("backup_folder"),
         backup_count=settings.get("backup_count"),
-        compress_backups=settings.get("compress_backups")
+        compress_backups=settings.get("compress_backups"),
+        log_message_requested=window.log_message_requested # Pass the signal directly
     )
 
-    # --- Dependency Injection ---
-    # Create the main window and inject all the components it needs (its dependencies).
-    window = Sims4RewindApp(
-        config_manager=config_manager,
-        backup_service=backup_service,
-        backup_view_model=backup_view_model,
-        startup_manager=startup_manager
-    )
+    # Now that config_manager and backup_service are fully created, set them in the window
+    window.set_dependencies_and_connect_signals(config_manager, backup_service)
     
     # Setup System Tray Icon
     system_tray_icon = SystemTrayIcon(window) # Pass the main window to the tray icon
@@ -50,6 +55,7 @@ def main():
     # Connect notification signals from the backup service to the system tray
     backup_service.backup_notification_requested.connect(system_tray_icon.show_notification)
     backup_service.status_notification_requested.connect(system_tray_icon.show_notification)
+    
 
     window.show()
     sys.exit(app.exec())

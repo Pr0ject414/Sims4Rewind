@@ -24,13 +24,16 @@ class BackupService(QObject):
     backup_pruned = pyqtSignal(str)
     backup_notification_requested = pyqtSignal(str, str) # title, message
     status_notification_requested = pyqtSignal(str, str) # title, message
+    log_message_requested = pyqtSignal(str) # New signal for general log messages
 
-    def __init__(self, saves_folder, backup_folder, backup_count, compress_backups, parent=None):
+    def __init__(self, saves_folder, backup_folder, backup_count, compress_backups, parent=None, log_message_requested=None):
         super().__init__(parent)
         self.saves_folder = saves_folder
         self.backup_folder = backup_folder
         self.backup_count = backup_count
         self.compress_backups = compress_backups
+
+        self.log_message_requested = log_message_requested # Store the signal
 
         self.backup_thread = None
         self.backup_handler = None
@@ -53,6 +56,7 @@ class BackupService(QObject):
             pruned_callback=self.backup_pruned.emit,
             backup_notification_callback=self.backup_notification_requested.emit,
             status_notification_callback=self.status_notification_requested.emit,
+            log_message_callback=self.log_message_requested.emit,
             compress_backups=self.compress_backups
         )
         
@@ -65,7 +69,8 @@ class BackupService(QObject):
         self.backup_thread.start()
         self.monitoring_status_changed.emit(True)
         self.status_notification_requested.emit("Monitoring Started", "Sims4Rewind is now actively monitoring your save files.")
-        print("Monitoring thread started.")
+        if self.log_message_requested:
+            self.log_message_requested.emit("Monitoring thread started.")
 
     def stop_monitoring(self):
         """
@@ -82,7 +87,8 @@ class BackupService(QObject):
 
         self.monitoring_status_changed.emit(False)
         self.status_notification_requested.emit("Monitoring Stopped", "Sims4Rewind has stopped monitoring.")
-        print("Monitoring thread stopped.")
+        if self.log_message_requested:
+            self.log_message_requested.emit("Monitoring thread stopped.")
 
     def update_settings(self, saves_folder, backup_folder, backup_count, compress_backups):
         """Updates the settings for the backup service."""

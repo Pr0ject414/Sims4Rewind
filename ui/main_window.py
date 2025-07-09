@@ -35,8 +35,12 @@ class Sims4RewindApp(QMainWindow):
         self._set_window_icon()
 
         self._connect_ui_signals()
+        # Service signals will be connected after dependencies are fully set
+
+    def set_dependencies_and_connect_signals(self, config_manager, backup_service):
+        self.config = config_manager
+        self.service = backup_service
         self._connect_service_signals()
-        
         self._load_initial_settings()
 
     def _set_window_icon(self):
