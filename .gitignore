@@ -113,3 +113,8 @@ config.json
 .DS_Store
 Thumbs.db
 GEMINI.md
+updater_config.py 
+version.txt 
+Sims4Rewind_latest.zip 
+private_update/ 
+hash.txt

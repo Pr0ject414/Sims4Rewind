@@ -61,13 +61,17 @@ If you want to modify or build the application yourself, follow these steps.
     ```
 3.  **Install the dependencies:**
     ```bash
-    pip install PyQt6 watchdog Pillow pywin32
+    pip install PyQt6 watchdog Pillow pywin32 requests
     ```
 
 ### Running the Application
 - To run the app in development mode:
   ```bash
   python app.py
+  ```
+- To run tests and clean up temporary files:
+  ```bash
+  python run_tests_and_clean.py
   ```
 - To update the application icon from a new image in the `icon_source` folder:
   ```bash

@@ -82,7 +82,7 @@ def test_prune_file_not_found_error(tmp_path, mocker):
     save_file_path.touch()
 
     # Use a real BackupHandler for this logic test
-    handler = BackupHandler(str(saves_dir), str(backup_dir), 1, MagicMock(), MagicMock(), MagicMock(), MagicMock(), MagicMock(), False)
+    handler = BackupHandler(str(saves_dir), str(backup_dir), 1, MagicMock(), MagicMock(), MagicMock(), MagicMock(), MagicMock(), False, MagicMock())
 
     # Create two backups
     save_file_path.write_text("v1")

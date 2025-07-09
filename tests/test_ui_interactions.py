@@ -48,6 +48,7 @@ def app(qtbot, mocker):
         backup_view_model=mock_view_model,
         startup_manager=mock_startup
     )
+    test_app.set_dependencies_and_connect_signals(mock_config, mock_service) # Connect signals
     qtbot.addWidget(test_app)
 
     # Return the app and the mocks so tests can use them

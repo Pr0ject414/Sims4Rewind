@@ -46,3 +46,23 @@ This document outlines potential new features and significant upgrades for the S
     *   Any errors encountered.
 *   **Benefit:** Creates a persistent audit trail that helps with troubleshooting and gives the user a complete history of the application's activity. It is more comprehensive than the ephemeral status bar.
 *   **Implementation Details:** This feature involved modifying `ui_main_window.py` to use a `QTabWidget` and add a `QTextEdit` for the log. Messages are routed to this log via the `_update_status_label` method in `ui/main_window.py`, which now also emits a signal to append to the log. All `print()` statements in core logic were replaced with calls to status/notification callbacks.
+
+---
+
+## 5. In-App Update Mechanism (Implemented - Google Drive)
+
+*   **Description:** The application now includes an in-app update mechanism that checks for, downloads, and installs updates automatically from Google Drive, simplifying the update process for internal testing.
+*   **Benefit:** Facilitates easier distribution of new features and bug fixes to testers without manual intervention, ensuring they always have the latest version.
+*   **Implementation Details:**
+    *   **Robust Update Process:** The update mechanism now employs an atomic update strategy. The new version is extracted to a temporary directory, the old application directory is renamed to a backup, the new version is moved into place, and then the old backup is deleted. This significantly reduces the risk of corrupted installations during updates.
+    *   **Improved Logging:** The updater script now logs its actions and any errors to a dedicated `updater_log.txt` file, making troubleshooting easier.
+    *   **Google Drive Setup:**
+        *   Upload the latest application build zip file (e.g., `Sims4Rewind_latest.zip`) and a `version.txt` file (containing only the current version number, e.g., `1.0.1`) to Google Drive.
+        *   Make both files publicly shareable with "Anyone with the link."
+        *   Obtain and use direct download links for both files (e.g., `https://drive.google.com/uc?export=download&id=FILE_ID`). These URLs are configured in `private_update/updater_config.py`.
+    *   **In-App Logic:**
+        *   The application downloads `version.txt`, reads the version, and compares it to its own running version.
+        *   If a new version is available, the application downloads the update zip to a temporary directory.
+        *   A separate `updater.py` script is launched to perform the atomic installation, overwrite old files, and relaunch the main application.
+
+---

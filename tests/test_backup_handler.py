@@ -36,7 +36,7 @@ def test_initial_backup_creation(temp_dirs, mocker):
     mock_pruned_cb = mocker.MagicMock()
 
     # Act: Initialize and run the initial scan part of the handler
-    handler = BackupHandler(str(saves_dir), str(backup_dir), 5, mock_status_cb, mock_created_cb, mock_pruned_cb, mocker.MagicMock(), mocker.MagicMock(), False)
+    handler = BackupHandler(str(saves_dir), str(backup_dir), 5, mock_status_cb, mock_created_cb, mock_pruned_cb, mocker.MagicMock(), mocker.MagicMock(), False, mocker.MagicMock())
     handler._is_running = True # FIX: Simulate the running state for the test
     handler._initialize_and_create_initial_backups()
 
@@ -52,7 +52,7 @@ def test_backup_on_modification(temp_dirs, mocker):
     create_mock_save(save_file_path, "version 1")
 
     # Arrange: Run the initial backup
-    handler = BackupHandler(str(saves_dir), str(backup_dir), 5, mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), False)
+    handler = BackupHandler(str(saves_dir), str(backup_dir), 5, mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), False, mocker.MagicMock())
     handler._is_running = True # FIX: Simulate the running state for the test
     handler._initialize_and_create_initial_backups()
     assert len(os.listdir(backup_dir)) == 1
@@ -74,7 +74,7 @@ def test_backup_skipped_for_unchanged_content(temp_dirs, mocker):
     mock_status_cb = mocker.MagicMock()
     
     # Arrange: Run the initial backup
-    handler = BackupHandler(str(saves_dir), str(backup_dir), 5, mock_status_cb, mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), False)
+    handler = BackupHandler(str(saves_dir), str(backup_dir), 5, mock_status_cb, mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), False, mocker.MagicMock())
     handler._is_running = True # FIX: Simulate the running state for the test
     handler._initialize_and_create_initial_backups()
     assert len(os.listdir(backup_dir)) == 1
@@ -96,7 +96,7 @@ def test_backup_pruning(temp_dirs, mocker):
     save_file_path = saves_dir / "Slot_00000001.save"
     mock_pruned_cb = mocker.MagicMock()
     
-    handler = BackupHandler(str(saves_dir), str(backup_dir), backup_count, mocker.MagicMock(), mocker.MagicMock(), mock_pruned_cb, mocker.MagicMock(), mocker.MagicMock(), False)
+    handler = BackupHandler(str(saves_dir), str(backup_dir), backup_count, mocker.MagicMock(), mocker.MagicMock(), mock_pruned_cb, mocker.MagicMock(), mocker.MagicMock(), False, mocker.MagicMock())
 
     # Act: Create more backups than the limit
     for i in range(backup_count + 2):

@@ -108,6 +108,7 @@ class Ui_Sims4RewindApp(object):
 
         self.restore_button = QPushButton("Restore Selected Backup")
         self.restore_button.setStyleSheet("background-color: #008CBA; color: white; border-radius: 5px; padding: 5px;")
+        self.restore_button.setEnabled(False) # Initially disabled
         restore_buttons_layout.addWidget(self.restore_button)
 
         backups_layout.addWidget(self.backup_list_widget)

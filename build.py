@@ -13,11 +13,12 @@ import os
 import sys
 import shutil
 import subprocess
+import hashlib
 
 # --- Configuration ---
 APP_NAME = "Sims4Rewind"
-APP_VERSION = "1.0"  # You can update this version number for future releases
-ENTRY_POINT = "main.py"
+APP_VERSION = "1.0.0"  # You can update this version number for future releases
+ENTRY_POINT = "app.py"
 ICON_UPDATER_SCRIPT = "update_icon.py"
 ICON_FILE = "app.ico"
 
@@ -25,7 +26,8 @@ ICON_FILE = "app.ico"
 DIST_DIR = 'dist'
 RELEASE_DIR_NAME = f"{APP_NAME}" # The name of the folder inside the zip
 RELEASE_DIR_PATH = os.path.join(DIST_DIR, RELEASE_DIR_NAME)
-ARCHIVE_NAME = f"{APP_NAME}_v{APP_VERSION}"
+ARCHIVE_NAME = f"{APP_NAME}_latest"
+HASH_FILE_NAME = "hash.txt"
 
 def run_command(command, description):
     """Runs a command and checks for errors."""
@@ -50,6 +52,17 @@ def run_command(command, description):
         print(e.stderr)
         sys.exit(1)
 
+def calculate_file_hash(file_path, hash_algo=hashlib.sha256):
+    """Calculates the hash of a file."""
+    hasher = hash_algo()
+    with open(file_path, 'rb') as f:
+        while True:
+            chunk = f.read(8192)
+            if not chunk:
+                break
+            hasher.update(chunk)
+    return hasher.hexdigest()
+
 def main():
     """Main function to run the build process."""
     print(f"Starting build process for {APP_NAME} v{APP_VERSION}...")
@@ -67,6 +80,10 @@ def main():
         "--onefile",
         "--windowed",
         f"--icon={ICON_FILE}",
+        "--add-data=private_update/updater_config.py;private_update",
+        "--add-data=private_update/updater_google_drive.py;private_update",
+        "--add-data=private_update/updater.py;private_update",
+        "--add-data=private_update/version.py;private_update",
         ENTRY_POINT
     ]
     run_command(pyinstaller_command, "Step 2: Packaging application with PyInstaller")
@@ -93,11 +110,37 @@ def main():
     print("--- Step 4: Creating distributable .zip archive ---")
     try:
         archive_path_without_ext = os.path.join(DIST_DIR, ARCHIVE_NAME)
+        final_zip_path = f"{archive_path_without_ext}.zip"
         shutil.make_archive(archive_path_without_ext, 'zip', RELEASE_DIR_PATH)
-        print(f"Successfully created archive: {archive_path_without_ext}.zip")
+        print(f"Successfully created archive: {final_zip_path}")
+        
+        # Calculate hash of the created zip file
+        zip_hash = calculate_file_hash(final_zip_path)
+        print(f"Calculated hash of {os.path.basename(final_zip_path)}: {zip_hash}")
+
+        # Create hash.txt file
+        hash_file_path = os.path.join(DIST_DIR, HASH_FILE_NAME)
+        with open(hash_file_path, 'w') as f:
+            f.write(zip_hash)
+        print(f"Created hash file: {hash_file_path}")
+
+        # Step 4.1: Move the zip file and hash file to the Google Drive location
+        google_drive_path = r"G:\My Drive\Sims4Rewind"
+        
+        destination_zip_path = os.path.join(google_drive_path, os.path.basename(final_zip_path))
+        destination_hash_path = os.path.join(google_drive_path, HASH_FILE_NAME)
+        
+        print(f"Moving {final_zip_path} to {destination_zip_path}")
+        shutil.move(final_zip_path, destination_zip_path)
+        print("Successfully moved zip to Google Drive location!")
+
+        print(f"Moving {hash_file_path} to {destination_hash_path}")
+        shutil.move(hash_file_path, destination_hash_path)
+        print("Successfully moved hash file to Google Drive location!")
+        
         print("Success!\n")
     except Exception as e:
-        print(f"ERROR: Failed to create zip archive: {e}")
+        print(f"ERROR: Failed to create zip archive or move files: {e}")
         sys.exit(1)
 
     # Step 5: Final cleanup

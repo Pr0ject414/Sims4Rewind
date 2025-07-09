@@ -6,7 +6,7 @@ from datetime import datetime
 
 from PyQt6.QtCore import QMetaObject, Qt, pyqtSignal
 from PyQt6.QtGui import QIcon, QPixmap
-from PyQt6.QtWidgets import QMainWindow, QFileDialog
+from PyQt6.QtWidgets import QMainWindow, QFileDialog, QPushButton
 
 from ui_main_window import Ui_Sims4RewindApp
 from resources import ICON_DATA_REWIND
@@ -20,7 +20,7 @@ class Sims4RewindApp(QMainWindow):
     user actions to the appropriate services.
     """
     log_message_requested = pyqtSignal(str) # New signal for logging
-    def __init__(self, config_manager, backup_service, backup_view_model, startup_manager):
+    def __init__(self, config_manager, backup_service, backup_view_model, startup_manager, updater=None):
         super().__init__()
 
         # Injected dependencies
@@ -28,6 +28,7 @@ class Sims4RewindApp(QMainWindow):
         self.service = backup_service
         self.view_model = backup_view_model
         self.startup = startup_manager
+        self.updater = updater # Store the updater instance
 
         # UI setup
         self.ui = Ui_Sims4RewindApp()
@@ -63,6 +64,12 @@ class Sims4RewindApp(QMainWindow):
         self.ui.compress_backups_checkbox.toggled.connect(self._save_current_settings)
         self.ui.backup_filter_dropdown.currentIndexChanged.connect(self._update_backup_list_display)
         self.ui.backup_list_widget.itemSelectionChanged.connect(self._update_ui_element_states)
+
+        # Update Button (initially hidden)
+        self.ui.update_button = QPushButton("Check for Updates")
+        self.ui.settings_group.layout().addWidget(self.ui.update_button) # Add to the layout of settings_group
+        self.ui.update_button.setVisible(False)
+        self.ui.update_button.clicked.connect(self._on_update_button_clicked)
 
     def _connect_service_signals(self):
         """Connects signals from services and models to UI update slots."""
@@ -257,6 +264,41 @@ class Sims4RewindApp(QMainWindow):
         except Exception as e:
             dialogs.show_critical(self, "Restore Failed", f"An unexpected error occurred during restore:\n\n{e}")
             self._update_status_label("Restore to location failed. See error popup.")
+
+    def _on_update_button_clicked(self):
+        """Handles the 'Check for Updates' button click."""
+        if not self.updater:
+            self._update_status_label("Update functionality not available.")
+            return
+
+        self._update_status_label("Checking for updates...")
+        update_available, latest_version = self.updater.check_for_update()
+
+        if update_available:
+            if dialogs.ask_question(self, "Update Available", f"Version {latest_version} is available. Do you want to download and install it?"):
+                downloaded_zip = self.updater.download_update()
+                if downloaded_zip:
+                    if dialogs.ask_question(self, "Install Update", "Update downloaded. Application needs to restart to install. Continue?"):
+                        if self.updater.install_update(downloaded_zip):
+                            self._update_status_label("Update initiated. Application will close.")
+                            self.close() # Close the main window to allow updater to take over
+                        else:
+                            dialogs.show_critical(self, "Update Failed", "Failed to launch update installer.")
+                            self._update_status_label("Update installation failed.")
+                    else:
+                        self._update_status_label("Update installation cancelled.")
+                else:
+                    dialogs.show_critical(self, "Download Failed", "Failed to download update.")
+                    self._update_status_label("Update download failed.")
+            else:
+                self._update_status_label("Update cancelled by user.")
+        else:
+            dialogs.show_info(self, "No Updates", "You are running the latest version.")
+            self._update_status_label("No new updates available.")
+
+    def show_update_button(self, visible=True):
+        """Sets the visibility of the update button."""
+        self.ui.update_button.setVisible(visible)
 
     def closeEvent(self, event):
         """Handles the user trying to close the window."""
