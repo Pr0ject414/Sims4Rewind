@@ -29,7 +29,8 @@ def app(qtbot, mocker):
         "saves_folder": "D:/dummy/saves",
         "backup_folder": "D:/dummy/backups",
         "backup_count": 5,
-        "auto_monitor_on_startup": False
+        "auto_monitor_on_startup": False,
+        "compress_backups": False
     }
     mock_config.load_settings.return_value = mock_settings
     mock_startup.is_enabled.return_value = False
@@ -81,7 +82,7 @@ def test_prune_file_not_found_error(tmp_path, mocker):
     save_file_path.touch()
 
     # Use a real BackupHandler for this logic test
-    handler = BackupHandler(str(saves_dir), str(backup_dir), 1, MagicMock(), MagicMock(), MagicMock(), MagicMock(), MagicMock())
+    handler = BackupHandler(str(saves_dir), str(backup_dir), 1, MagicMock(), MagicMock(), MagicMock(), MagicMock(), MagicMock(), False)
 
     # Create two backups
     save_file_path.write_text("v1")

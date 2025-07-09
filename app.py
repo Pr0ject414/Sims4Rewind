@@ -30,7 +30,8 @@ def main():
     backup_service = BackupService(
         saves_folder=settings.get("saves_folder"),
         backup_folder=settings.get("backup_folder"),
-        backup_count=settings.get("backup_count")
+        backup_count=settings.get("backup_count"),
+        compress_backups=settings.get("compress_backups")
     )
 
     # --- Dependency Injection ---

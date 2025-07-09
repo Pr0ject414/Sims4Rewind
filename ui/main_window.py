@@ -1,11 +1,12 @@
 import base64
 import os
 import shutil
+import zipfile # Import zipfile
 from datetime import datetime
 
 from PyQt6.QtCore import QMetaObject, Qt, pyqtSignal
 from PyQt6.QtGui import QIcon, QPixmap
-from PyQt6.QtWidgets import QMainWindow
+from PyQt6.QtWidgets import QMainWindow, QFileDialog
 
 from ui_main_window import Ui_Sims4RewindApp
 from resources import ICON_DATA_REWIND
@@ -55,6 +56,7 @@ class Sims4RewindApp(QMainWindow):
         self.ui.restore_to_button.clicked.connect(self._restore_backup_to_location)
         self.ui.toggle_monitoring_button.toggled.connect(self._toggle_monitoring)
         self.ui.startup_checkbox.toggled.connect(self.startup.set_startup)
+        self.ui.compress_backups_checkbox.toggled.connect(self._save_current_settings)
         self.ui.backup_filter_dropdown.currentIndexChanged.connect(self._update_backup_list_display)
         self.ui.backup_list_widget.itemSelectionChanged.connect(self._update_ui_element_states)
 
@@ -74,6 +76,7 @@ class Sims4RewindApp(QMainWindow):
         self.ui.backup_folder_path.setText(settings.get("backup_folder"))
         self.ui.backup_count_spinbox.setValue(settings.get("backup_count"))
         self.ui.auto_monitor_checkbox.setChecked(settings.get("auto_monitor_on_startup"))
+        self.ui.compress_backups_checkbox.setChecked(settings.get("compress_backups"))
         self.ui.startup_checkbox.setChecked(self.startup.is_enabled())
         self.view_model.rescan_backup_folder(settings.get("backup_folder"))
         self._update_ui_element_states()
@@ -84,7 +87,8 @@ class Sims4RewindApp(QMainWindow):
             "saves_folder": self.ui.saves_folder_path.text(),
             "backup_folder": self.ui.backup_folder_path.text(),
             "backup_count": self.ui.backup_count_spinbox.value(),
-            "auto_monitor_on_startup": self.ui.auto_monitor_checkbox.isChecked()
+            "auto_monitor_on_startup": self.ui.auto_monitor_checkbox.isChecked(),
+            "compress_backups": self.ui.compress_backups_checkbox.isChecked()
         }
         self.config.save_settings(settings)
         self._update_status_label("Settings saved.")
@@ -160,7 +164,8 @@ class Sims4RewindApp(QMainWindow):
             self.service.update_settings(
                 self.ui.saves_folder_path.text(),
                 self.ui.backup_folder_path.text(),
-                self.ui.backup_count_spinbox.value()
+                self.ui.backup_count_spinbox.value(),
+                self.ui.compress_backups_checkbox.isChecked()
             )
             self.service.start_monitoring()
         else:
@@ -197,7 +202,12 @@ class Sims4RewindApp(QMainWindow):
                 safety_path = f"{live_save_path}.pre-restore-{timestamp}"
                 shutil.move(live_save_path, safety_path)
             
-            shutil.copy2(backup_source_path, live_save_path)
+            if backup_filename.endswith(".zip"):
+                with zipfile.ZipFile(backup_source_path, 'r') as zf:
+                    # Extract the original save file from the zip to the live saves folder
+                    zf.extract(original_savename, saves_folder)
+            else:
+                shutil.copy2(backup_source_path, live_save_path)
             dialogs.show_info(self, "Success", f"Successfully restored '{original_savename}'.")
             self._update_status_label(f"Successfully restored {original_savename}.")
         except Exception as e:
@@ -221,8 +231,6 @@ class Sims4RewindApp(QMainWindow):
         default_filename = original_savename
         
         # Open file dialog to get destination path and filename
-        # We need to import QFileDialog for this
-        from PyQt6.QtWidgets import QFileDialog
         destination_path, _ = QFileDialog.getSaveFileName(
             self, "Save Backup As", default_filename, "All Files (*)"
         )
@@ -235,7 +243,15 @@ class Sims4RewindApp(QMainWindow):
             backup_folder = self.ui.backup_folder_path.text()
             backup_source_path = os.path.join(backup_folder, backup_filename)
             
-            shutil.copy2(backup_source_path, destination_path)
+            if backup_filename.endswith(".zip"):
+                with zipfile.ZipFile(backup_source_path, 'r') as zf:
+                    # Extract the original save file from the zip to the chosen destination
+                    # The destination_path includes the filename, so we extract to its dirname
+                    zf.extract(original_savename, os.path.dirname(destination_path))
+                    # Then rename the extracted file to the desired destination_path
+                    os.rename(os.path.join(os.path.dirname(destination_path), original_savename), destination_path)
+            else:
+                shutil.copy2(backup_source_path, destination_path)
             dialogs.show_info(self, "Success", f"Successfully restored '{backup_filename}' to '{destination_path}'.")
             self._update_status_label(f"Successfully restored {backup_filename} to {destination_path}.")
         except Exception as e:

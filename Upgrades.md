@@ -27,29 +27,22 @@ This document outlines potential new features and significant upgrades for the S
 
 ---
 
-## 3. Backup Compression (.zip)
+## 3. Backup Compression (.zip) (Implemented)
 
-* **Description:** Add an option in the settings (e.g., a "Compress backups" checkbox) to save backups as `.zip` files instead of raw `.bak` files.
+* **Description:** An option in the settings (e.g., a "Compress backups" checkbox) to save backups as `.zip` files instead of raw `.bak` files has been implemented.
 * **Benefit:** Significantly reduces the disk space used by the backup folder. Sims 4 save files are often highly compressible. This is a great feature for users with a large number of saves or limited storage.
-* **Implementation Plan:**
-    1.  Add a `compress_backups` boolean to the `config.json` file and a corresponding `QCheckBox` in `ui_main_window.py`.
-    2.  In `backup_handler.py`, the `check_and_create_backup` method would be modified. If compression is enabled, it would use Python's built-in `zipfile` library to create a zip archive containing the single `.save` file.
-    3.  The `_restore_backup` method in `main_window.py` would need to be updated to handle unzipping the file upon restore.
-    4.  The `get_original_from_backup` utility function would also need to be updated to parse `.zip` filenames.
+* **Implementation Details:** This feature involved adding a `compress_backups` boolean to the `config.json` file and a corresponding `QCheckBox` in `ui_main_window.py`. In `backup_handler.py`, the `check_and_create_backup` method was modified to use Python's built-in `zipfile` library to create a zip archive. The `_restore_backup` method in `main_window.py` was updated to handle unzipping the file upon restore, and the `get_original_from_backup` utility function was updated to parse `.zip` filenames.
 
 ---
 
-## 4. Detailed Log Tab
+## 4. Detailed Log Tab (Implemented)
 
-* **Description:** Add a new tab to the main window containing a scrollable, read-only text box. This log would display a timestamped history of all major actions performed by the application.
-* **Actions to Log:**
-    * Application start/exit.
-    * Monitoring started/stopped.
-    * Backup created/pruned.
-    * File skipped (content unchanged).
-    * Any errors encountered.
-* **Benefit:** Creates a persistent audit trail that helps with troubleshooting and gives the user a complete history of the application's activity. It is more comprehensive than the ephemeral status bar.
-* **Implementation Plan:**
-    1.  Modify `ui_main_window.py` to use a `QTabWidget`.
-    2.  Add a new "Log" tab containing a `QTextEdit` widget set to be read-only.
-    3.  Create a new logging handler (or a simple signal) that appends messages to this `QTextEdit` widget. All status updates currently sent to the status bar would also be sent to this log.
+*   **Description:** A new tab has been added to the main window containing a scrollable, read-only text box. This log displays a timestamped history of all major actions performed by the application.
+*   **Actions Logged:**
+    *   Application start/exit.
+    *   Monitoring started/stopped.
+    *   Backup created/pruned.
+    *   File skipped (content unchanged).
+    *   Any errors encountered.
+*   **Benefit:** Creates a persistent audit trail that helps with troubleshooting and gives the user a complete history of the application's activity. It is more comprehensive than the ephemeral status bar.
+*   **Implementation Details:** This feature involved modifying `ui_main_window.py` to use a `QTabWidget` and add a `QTextEdit` for the log. Messages are routed to this log via the `_update_status_label` method in `ui/main_window.py`, which now also emits a signal to append to the log. All `print()` statements in core logic were replaced with calls to status/notification callbacks.

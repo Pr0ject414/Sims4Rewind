@@ -11,6 +11,7 @@ def get_original_from_backup(backup_filename: str) -> str | None:
     Parses a backup filename to get the original .save filename using a robust
     regular expression that is case-insensitive and handles the timestamp.
     e.g., "slot_00000002.save_2023-10-27_10-30-00.bak" -> "slot_00000002.save"
+    e.g., "slot_00000002.save_2023-10-27_10-30-00.zip" -> "slot_00000002.save"
 
     Args:
         backup_filename: The full filename of the backup file.
@@ -27,14 +28,9 @@ def get_original_from_backup(backup_filename: str) -> str | None:
     #              - The `.+` is greedy but will stop at the underscore before the date.
     #   _          - A literal underscore separating the name from the timestamp.
     #   (\d{4}...) - A group matching the specific timestamp format (YYYY-MM-DD_HH-MM-SS).
-    #   \.bak$     - The literal string ".bak" at the end of the filename.
+    #   \.(bak|zip)$ - The literal string ".bak" or ".zip" at the end of the filename.
     #   re.IGNORECASE makes the match work for both "Slot" and "slot", etc.
-    match = re.match(r'(.+)_(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})\.bak$', backup_filename, re.IGNORECASE)
-
+    match = re.match(r'(.*?\.save)_(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})\.(bak|zip)$', backup_filename, re.IGNORECASE)
     if match:
-        # The first captured group is the original filename we want.
         return match.group(1)
-    else:
-        # If the filename does not match our expected pattern, we cannot parse it.
-        print(f"Could not parse backup name with regex: {backup_filename}")
-        return None
+    return None

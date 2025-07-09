@@ -36,7 +36,8 @@ def test_save_and_load_settings(config_path):
         "saves_folder": "C:/Saves",
         "backup_folder": "D:/Backups",
         "backup_count": 25,
-        "auto_monitor_on_startup": False
+        "auto_monitor_on_startup": False,
+        "compress_backups": False
     }
 
     # Act: Save the settings

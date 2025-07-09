@@ -56,6 +56,8 @@ class Ui_Sims4RewindApp(object):
         other_settings_layout.addWidget(self.backup_count_spinbox)
         other_settings_layout.addStretch()
         other_settings_layout.addWidget(self.auto_monitor_checkbox)
+        self.compress_backups_checkbox = QCheckBox("Compress backups (.zip)")
+        other_settings_layout.addWidget(self.compress_backups_checkbox)
         other_settings_layout.addWidget(self.startup_checkbox)
         settings_layout.addLayout(other_settings_layout)
 

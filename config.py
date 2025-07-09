@@ -18,6 +18,7 @@ class ConfigManager:
             "backup_folder": "",
             "backup_count": 10,
             "auto_monitor_on_startup": True,
+            "compress_backups": False,
         }
 
     def load_settings(self):

@@ -8,6 +8,7 @@ import os
 import shutil
 import time
 import hashlib
+import zipfile # Import zipfile
 from datetime import datetime
 from PyQt6.QtCore import QObject
 from watchdog.observers import Observer
@@ -41,7 +42,7 @@ class BackupHandler(QObject):
     Manages the backup process in a separate thread.
     Communicates with the main UI thread via Qt signals passed as callbacks.
     """
-    def __init__(self, saves_folder, backup_folder, backup_count, status_callback, created_callback, pruned_callback, backup_notification_callback, status_notification_callback):
+    def __init__(self, saves_folder, backup_folder, backup_count, status_callback, created_callback, pruned_callback, backup_notification_callback, status_notification_callback, compress_backups):
         super().__init__()
         self.saves_folder = saves_folder
         self.backup_folder = backup_folder
@@ -55,6 +56,7 @@ class BackupHandler(QObject):
         self.pruned_callback = pruned_callback
         self.backup_notification_callback = backup_notification_callback
         self.status_notification_callback = status_notification_callback
+        self.compress_backups = compress_backups
 
     def run(self):
         """The main worker method. This runs on the dedicated backup thread."""
@@ -100,8 +102,6 @@ class BackupHandler(QObject):
                 last_exception = e
                 time.sleep(delay)
         
-        self.status_callback(f"Failed to read file {os.path.basename(file_path)} after {retries} attempts.")
-        self.status_notification_callback("File Read Error", f"Failed to read {os.path.basename(file_path)} after {retries} attempts.")
         self.status_notification_callback("File Read Error", f"Failed to read {os.path.basename(file_path)} after {retries} attempts. Final error: {last_exception}")
         return None
 
@@ -177,10 +177,16 @@ class BackupHandler(QObject):
                 os.makedirs(self.backup_folder)
 
             timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-            backup_filename = f"{original_filename}_{timestamp}.bak"
-            destination_path = os.path.join(self.backup_folder, backup_filename)
-
-            shutil.copy2(file_path, destination_path)
+            
+            if self.compress_backups:
+                backup_filename = f"{original_filename}_{timestamp}.zip"
+                destination_path = os.path.join(self.backup_folder, backup_filename)
+                with zipfile.ZipFile(destination_path, 'w', zipfile.ZIP_DEFLATED) as zf:
+                    zf.write(file_path, original_filename) # Store with original name inside zip
+            else:
+                backup_filename = f"{original_filename}_{timestamp}.bak"
+                destination_path = os.path.join(self.backup_folder, backup_filename)
+                shutil.copy2(file_path, destination_path)
 
             self.last_backup_hashes[original_filename] = current_hash
             self.status_callback(f"Created backup: {backup_filename}")
