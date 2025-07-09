@@ -62,7 +62,7 @@ If you want to modify or build the application yourself, follow these steps.
 ### Running the Application
 - To run the app in development mode:
   ```bash
-  python main.py
+  python app.py
   ```
 - To update the application icon from a new image in the `icon_source` folder:
   ```bash
@@ -76,3 +76,9 @@ If you want to modify or build the application yourself, follow these steps.
 
 ---
 This project was created with Python and the PyQt6 framework.
+
+## Recent Refactoring
+The application's internal structure has been significantly refactored to improve modularity, maintainability, and testability. Key changes include:
+-   Separation of UI (View), business logic (Service), and UI state (ViewModel) into distinct modules.
+-   Implementation of Dependency Injection for cleaner component management.
+-   Improved test coverage and reliability through isolated unit and integration tests.

@@ -41,7 +41,7 @@ class BackupHandler(QObject):
     Manages the backup process in a separate thread.
     Communicates with the main UI thread via Qt signals passed as callbacks.
     """
-    def __init__(self, saves_folder, backup_folder, backup_count, status_callback, created_callback, pruned_callback):
+    def __init__(self, saves_folder, backup_folder, backup_count, status_callback, created_callback, pruned_callback, backup_notification_callback, status_notification_callback):
         super().__init__()
         self.saves_folder = saves_folder
         self.backup_folder = backup_folder
@@ -53,6 +53,8 @@ class BackupHandler(QObject):
         self.status_callback = status_callback
         self.created_callback = created_callback
         self.pruned_callback = pruned_callback
+        self.backup_notification_callback = backup_notification_callback
+        self.status_notification_callback = status_notification_callback
 
     def run(self):
         """The main worker method. This runs on the dedicated backup thread."""
@@ -99,6 +101,7 @@ class BackupHandler(QObject):
                 time.sleep(delay)
         
         self.status_callback(f"Failed to read file {os.path.basename(file_path)} after {retries} attempts.")
+        self.status_notification_callback("File Read Error", f"Failed to read {os.path.basename(file_path)} after {retries} attempts.")
         print(f"Could not calculate hash for {os.path.basename(file_path)} after {retries} attempts. Final error: {last_exception}")
         return None
 
@@ -145,6 +148,7 @@ class BackupHandler(QObject):
                     self.status_callback(f"Creating initial backup for {filename}...")
                     file_path = os.path.join(self.saves_folder, filename)
                     self.check_and_create_backup(file_path)
+                    self.backup_notification_callback("Initial Backup Created", f"Backup of {filename} created.")
 
                     # --- THROTTLING ---
                     # Yield control to reduce the sudden I/O impact on the system.
@@ -160,6 +164,7 @@ class BackupHandler(QObject):
             current_hash = self._calculate_hash(file_path)
 
             if not current_hash:
+                self.status_notification_callback("Backup Error", f"Failed to read {original_filename} for backup.")
                 return # Error was already reported by _calculate_hash
 
             last_hash = self.last_backup_hashes.get(original_filename)
@@ -179,6 +184,7 @@ class BackupHandler(QObject):
 
             self.last_backup_hashes[original_filename] = current_hash
             self.status_callback(f"Created backup: {backup_filename}")
+            self.backup_notification_callback("Backup Created", f"Backup of {original_filename} created.")
 
             # Notify the main thread that a new backup was created
             self.created_callback(backup_filename)
@@ -188,6 +194,7 @@ class BackupHandler(QObject):
 
         except Exception as e:
             self.status_callback(f"Error creating backup: {e}")
+            self.status_notification_callback("Backup Error", f"Error creating backup for {original_filename}: {e}")
 
     def prune_backups(self, original_filename):
         """Deletes the oldest backups for a given save file if they exceed the configured limit."""
@@ -206,11 +213,17 @@ class BackupHandler(QObject):
                 for i in range(num_to_delete):
                     filename_to_delete = backups_for_this_save[i]
                     path_to_delete = os.path.join(self.backup_folder, filename_to_delete)
-                    os.remove(path_to_delete)
-                    self.status_callback(f"Pruned old backup: {filename_to_delete}")
-                    
-                    # Notify the main thread that a backup was pruned
-                    self.pruned_callback(filename_to_delete)
+                    # FIX: Wrap os.remove in a try/except to handle race conditions
+                    try:
+                        os.remove(path_to_delete)
+                        self.status_callback(f"Pruned old backup: {filename_to_delete}")
+                        self.pruned_callback(filename_to_delete)
+                        self.backup_notification_callback("Backup Pruned", f"Old backup of {original_filename} pruned.")
+                    except FileNotFoundError:
+                        # This can happen if file was deleted externally. It's safe to ignore.
+                        print(f"Prune skipping: '{filename_to_delete}' was already deleted.")
+                        pass
 
         except Exception as e:
             self.status_callback(f"Error pruning backups: {e}")
+            self.status_notification_callback("Prune Error", f"Error pruning backups for {original_filename}: {e}")

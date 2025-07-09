@@ -112,3 +112,4 @@ config.json
 # OS-specific files
 .DS_Store
 Thumbs.db
+GEMINI.md

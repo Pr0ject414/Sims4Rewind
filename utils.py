@@ -18,6 +18,10 @@ def get_original_from_backup(backup_filename: str) -> str | None:
     Returns:
         The original save filename, or None if parsing fails.
     """
+    # Handle cases where the input is None or not a string
+    if not isinstance(backup_filename, str):
+        return None
+    
     # This regular expression looks for the following pattern:
     #   (.+)       - Group 1: Captures the original filename (e.g., "Slot_00000002.save").
     #              - The `.+` is greedy but will stop at the underscore before the date.
