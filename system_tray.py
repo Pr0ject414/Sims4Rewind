@@ -50,7 +50,7 @@ class SystemTrayIcon(QSystemTrayIcon):
 
         # Exit Action
         self.exit_action = QAction("Exit", self)
-        self.exit_action.triggered.connect(self.main_window.app_quit)
+        self.exit_action.triggered.connect(self.main_window.close)
         self.menu.addAction(self.exit_action)
 
         self.setContextMenu(self.menu)
