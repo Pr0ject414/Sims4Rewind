@@ -160,6 +160,7 @@ class Sims4RewindApp(QMainWindow):
         folder = dialogs.browse_for_directory(self, "Select Sims 4 Saves Folder")
         if folder:
             self.ui.saves_folder_path.setText(folder)
+            self._save_current_settings()
 
     def _browse_backup_folder(self):
         """Delegates browsing for the backup folder."""
@@ -167,6 +168,7 @@ class Sims4RewindApp(QMainWindow):
         if folder:
             self.ui.backup_folder_path.setText(folder)
             self.view_model.rescan_backup_folder(folder)
+            self._save_current_settings()
 
     def _toggle_monitoring(self, checked):
         """Delegates starting or stopping monitoring to the backup service."""
