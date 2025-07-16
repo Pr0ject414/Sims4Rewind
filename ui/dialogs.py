@@ -40,7 +40,7 @@ def ask_minimize_or_exit(parent):
 
     minimize_button = msg_box.addButton("Minimize to Tray", QMessageBox.ButtonRole.ActionRole)
     exit_button = msg_box.addButton("Exit Application", QMessageBox.ButtonRole.DestructiveRole)
-    cancel_button = msg_box.addButton("Cancel", QMessageBox.ButtonRole.RejectRole)
+    msg_box.addButton("Cancel", QMessageBox.ButtonRole.RejectRole)
     
     msg_box.setDefaultButton(minimize_button)
     msg_box.exec()

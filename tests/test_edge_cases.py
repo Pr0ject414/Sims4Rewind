@@ -5,7 +5,6 @@ Tests for edge cases and error handling scenarios.
 import sys
 import os
 import pytest
-import shutil
 import time
 from unittest.mock import MagicMock, patch
 
@@ -13,7 +12,6 @@ from unittest.mock import MagicMock, patch
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from ui.main_window import Sims4RewindApp
-from services import BackupService
 from backup_handler import BackupHandler
 
 @pytest.fixture

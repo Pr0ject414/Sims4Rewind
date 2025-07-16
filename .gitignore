@@ -118,3 +118,5 @@ version.txt
 Sims4Rewind_latest.zip 
 private_update/ 
 hash.txt
+private_key.pem
+public_key.pem

@@ -1,12 +1,10 @@
 import base64
 import os
-import shutil
-import zipfile # Import zipfile
 from datetime import datetime
 
-from PyQt6.QtCore import QMetaObject, Qt, pyqtSignal
+from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtGui import QIcon, QPixmap
-from PyQt6.QtWidgets import QMainWindow, QFileDialog, QPushButton
+from PyQt6.QtWidgets import QMainWindow, QFileDialog
 
 from ui_main_window import Ui_Sims4RewindApp
 from resources import ICON_DATA_REWIND
@@ -65,12 +63,6 @@ class Sims4RewindApp(QMainWindow):
         self.ui.backup_filter_dropdown.currentIndexChanged.connect(self._update_backup_list_display)
         self.ui.backup_list_widget.itemSelectionChanged.connect(self._update_ui_element_states)
 
-        # Update Button (initially hidden)
-        self.ui.update_button = QPushButton("Check for Updates")
-        self.ui.settings_group.layout().addWidget(self.ui.update_button) # Add to the layout of settings_group
-        self.ui.update_button.setVisible(False)
-        self.ui.update_button.clicked.connect(self._on_update_button_clicked)
-
     def _connect_service_signals(self):
         """Connects signals from services and models to UI update slots."""
         self.service.monitoring_status_changed.connect(self._on_monitoring_status_changed)
@@ -90,7 +82,6 @@ class Sims4RewindApp(QMainWindow):
         self.ui.compress_backups_checkbox.setChecked(settings.get("compress_backups"))
         self.ui.startup_checkbox.setChecked(self.startup.is_enabled())
         self.view_model.rescan_backup_folder(settings.get("backup_folder"))
-        self._update_ui_element_states()
 
     def _save_current_settings(self):
         """Saves the current UI settings to the config file."""
@@ -297,6 +288,8 @@ class Sims4RewindApp(QMainWindow):
         else:
             dialogs.show_info(self, "No Updates", "You are running the latest version.")
             self._update_status_label("No new updates available.")
+
+    
 
     def show_update_button(self, visible=True):
         """Sets the visibility of the update button."""

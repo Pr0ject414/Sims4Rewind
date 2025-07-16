@@ -5,10 +5,8 @@ These tests use mock objects to isolate the UI from the backend services.
 
 import sys
 import os
-import os
 import pytest
-from PyQt6.QtCore import pyqtSignal, QObject
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 # Add project root to the path to allow imports from the 'ui' package
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))

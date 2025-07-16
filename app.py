@@ -10,12 +10,12 @@ from PyQt6.QtWidgets import QApplication
 from config import ConfigManager
 from services import BackupService
 from startup_manager import StartupManager
-from system_tray import SystemTrayIcon # Import SystemTrayIcon
+from system_tray import SystemTrayIcon
 from ui.main_window import Sims4RewindApp
 from ui.view_model import BackupViewModel
 from ui import dialogs # Import dialogs
 
-__version__ = "1.0.0" # Main application version
+__version__ = "1.0.1" # Main application version
 
 def main():
     """Application entry point."""
@@ -63,7 +63,6 @@ def main():
     # --- Update Check (Google Drive) ---
     try:
         from private_update.updater_google_drive import GoogleDriveUpdater
-        from private_update.version import __version__ as private_version
 
         updater = GoogleDriveUpdater(log_callback=window.log_message_requested.emit)
         window.updater = updater # Set the updater instance in the window

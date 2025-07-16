@@ -72,7 +72,7 @@ def update_icon_resource(Image):
 
         pattern = re.compile(
             f"({ICON_VARIABLE_NAME}\\s*=\\s*b(""" + r'"""' + r"|'''))" +
-            f".*?" +
+            ".*?" +
             r"(\2)",
             re.DOTALL
         )

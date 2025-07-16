@@ -103,7 +103,8 @@ class BackupHandler(QObject):
                 last_exception = e
                 time.sleep(delay)
         
-        self.status_notification_callback("File Read Error", f"Failed to read {os.path.basename(file_path)} after {retries} attempts. Final error: {last_exception}")
+        # The caller is responsible for logging the error.
+        self.log_message_callback(f"Failed to read {os.path.basename(file_path)} after {retries} attempts. Final error: {last_exception}")
         return None
 
     def _initialize_and_create_initial_backups(self):
@@ -138,6 +139,9 @@ class BackupHandler(QObject):
             # Get a list of files to process first to avoid iterating over a live directory handle
             save_files_to_check = [f for f in os.listdir(self.saves_folder) if f.endswith('.save')]
             
+            # Keep track of which files we create a backup for so we can prune them once at the end.
+            initial_backups_made_for = set()
+
             for filename in save_files_to_check:
                 # If the user clicks "Stop Monitoring" during this scan, abort.
                 if not self._is_running:
@@ -148,31 +152,43 @@ class BackupHandler(QObject):
                     self.status_notification_callback("Initial Backup Info", f"File '{filename}' has no backup. Creating initial one.")
                     self.status_callback(f"Creating initial backup for {filename}...")
                     file_path = os.path.join(self.saves_folder, filename)
-                    self.check_and_create_backup(file_path)
-                    self.backup_notification_callback("Initial Backup Created", f"Backup of {filename} created.")
+                    # Create backup but defer pruning until the end of the initial scan.
+                    backup_created = self.check_and_create_backup(file_path, perform_prune=False)
+                    if backup_created:
+                        initial_backups_made_for.add(filename)
+                        self.backup_notification_callback("Initial Backup Created", f"Backup of {filename} created.")
 
                     # --- THROTTLING ---
                     # Yield control to reduce the sudden I/O impact on the system.
                     time.sleep(0.2) # 200ms delay
+            
+            # Prune all files that just had an initial backup created.
+            if initial_backups_made_for:
+                self.status_callback("Pruning initial backups...")
+                for filename in initial_backups_made_for:
+                    self.prune_backups(filename)
         
         if self._is_running:
             self.status_callback("Initialization and initial backup check complete.")
 
-    def check_and_create_backup(self, file_path):
-        """Checks file hash and creates a backup if content has changed."""
+    def check_and_create_backup(self, file_path, perform_prune=True):
+        """
+        Checks file hash and creates a backup if content has changed.
+        Returns True if a backup was created, False otherwise.
+        """
         try:
             original_filename = os.path.basename(file_path)
             current_hash = self._calculate_hash(file_path)
 
             if not current_hash:
-                self.status_notification_callback("Backup Error", f"Failed to read {original_filename} for backup.")
-                return # Error was already reported by _calculate_hash
+                # The hash calculation failed and already logged the error.
+                return False
 
             last_hash = self.last_backup_hashes.get(original_filename)
 
             if current_hash == last_hash:
                 self.status_callback(f"Content of {original_filename} unchanged. Skipping.")
-                return
+                return False
 
             if not os.path.exists(self.backup_folder):
                 os.makedirs(self.backup_folder)
@@ -197,11 +213,15 @@ class BackupHandler(QObject):
             self.created_callback(backup_filename)
 
             # Clean up old backups for this specific save file
-            self.prune_backups(original_filename)
+            if perform_prune:
+                self.prune_backups(original_filename)
+            
+            return True
 
         except Exception as e:
             self.status_callback(f"Error creating backup: {e}")
             self.status_notification_callback("Backup Error", f"Error creating backup for {original_filename}: {e}")
+            return False
 
     def prune_backups(self, original_filename):
         """Deletes the oldest backups for a given save file if they exceed the configured limit."""
